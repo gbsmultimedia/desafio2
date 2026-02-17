@@ -10,7 +10,7 @@ var config = {
     theme: 'dark', 
     use3dTerrain: true, 
     
-    title: 'Ingenieria en Jaque: De Ribadelago a Aznalcóllar',
+    title: 'Ingeniería en Jaque: De Ribadelago a Aznalcóllar',
     subtitle: 'Tres tragedias hidrológicas marcadas por el fallo humano y la fuerza de la naturaleza en España',
     byline: 'Desafio 2 - Guillermo Bravo',
     footer: 'Fuente: Datos históricos y registros oficiales, Fotos: Wikipeida, El Norte de Castilla, Las Provincias, Noticias CV, EL Mundo, El Confidencial, Reuters . Visualización creada con Mapbox Storytelling.',

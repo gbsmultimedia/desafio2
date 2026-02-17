@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8' />
+    <title>Cuando el agua te arrastra</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link rel="icon" type="image/x-icon"
+        href="https://raw.githubusercontent.com/mapbox/assembly/publisher-staging/src/svgs/mapbox.svg">
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css' rel='stylesheet' />
+    <script src="https://cdn.jsdelivr.net/npm/mapbox-gl-globe-minimap@1.2.0/dist/bundle.js"></script>
+    <script src="https://unpkg.com/scrollama"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+    body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Lato', sans-serif; /* <--- CAMBIO AQUÍ */
+}
+
+    /* Opcional: Si quieres que los títulos sean aún más modernos y mayúsculas */
+    h1, h2, h3 {
+    font-weight: 700; /* Negrita fuerte */
+    letter-spacing: 1px; /* Un poco de aire entre letras */
+}
+        }
+
+        a,
+        a:hover,
+        a:visited {
+            color: #2BA89F;
+        }
+
+        #map {
+            top: 0;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+        }
+
+        #header {
+            margin: auto;
+            width: 100%;
+            position: relative;
+            z-index: 5;
+            background: #0e3b38;
+            color: #fff;
+        }
+
+        #header h1,
+        #header h2,
+        #header p {
+            margin: 0;
+            padding: 2vh 2vw;
+            text-align: center;
+        }
+
+        #footer {
+            width: 100%;
+            min-height: 5vh;
+            padding-top: 2vh;
+            padding-bottom: 2vh;
+            text-align: center;
+            line-height: 25px;
+            font-size: 13px;
+            position: relative;
+            z-index: 5;
+        }
+
+        #features {
+            padding-top: 10vh;
+            padding-bottom: 10vh;
+        }
+
+        .hidden {
+            visibility: hidden;
+        }
+
+        .centered {
+            width: 50vw;
+            margin: 0 auto;
+        }
+
+        .lefty {
+            width: 33vw;
+            margin-left: 5vw;
+        }
+
+        .righty {
+            width: 33vw;
+            margin-left: 62vw;
+        }
+
+        .fully {
+            width: 100%;
+            margin: auto;
+        }
+
+        .light {
+            color: #2BA89F;
+            background-color: #fafafa;
+        }
+
+        .dark {
+            color: #fafafa;
+            background-color: #444;
+        }
+
+        /* --- ESTILOS SHORTHAND & DARK MODE --- */
+        .step {
+            padding-bottom: 50vh;
+            opacity: 0.25;
+        }
+
+        .step.active {
+            opacity: 0.99;
+        }
+
+        .step div {
+            padding: 25px 30px;
+            line-height: 25px;
+            font-size: 14px;
+        }
+
+        /* Bloque de texto estilo Shorthand */
+        .step > div {
+            background-color: #185f5a !important;
+            color: #F5F7F6 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 #2BA89F
+            border-radius: 10px;
+        }
+
+        /* Títulos de los capítulos (Ribadelago, Tous, etc.) */
+        .step h3 {
+            font-size: 30px;  /* <--- CAMBIA ESTE NÚMERO PARA HACERLO MÁS GRANDE */
+            line-height: 1.2; /* Esto evita que las líneas se peguen mucho si el título es largo */
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2BA89F;
+            padding-bottom: 15px; /* Un poco más de espacio entre el título y la foto */
+            color: #F5F7F6;
+        }
+        /* Estilos para el texto de la descripción (Párrafos) */
+        .step p {
+            font-size: 20px;   /* <--- TAMAÑO: Sube a 20px si lo quieres aún más grande */
+            line-height: 1.4;  /* ESPACIADO: Muy importante. Si subes la letra, sube esto para que no se amontonen las líneas */
+            font-weight: 400;  /* Grosor: 300 (fino), 400 (normal) */
+            margin-bottom: 10px;
+            color: #F5F7F6;    /* Aseguramos que sea blanco/gris claro */
+        }
+
+        /* --- ESTILOS UNIFICADOS PARA IMÁGENES (FIXED SIZE) --- */
+        
+        /* 1. Contenedor del Carrusel */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            height: 300px; /* ALTURA FIJA PARA TODO */
+            overflow: hidden;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            background-color: #31c7bd;
+            border: 3px solid rgba(255,255,255,0.1);
+        }
+
+        /* 2. Imágenes dentro del carrusel */
+        .carousel-slide {
+            position: absolute !important;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%; 
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            object-fit: cover; /* Recorta para llenar */
+            object-position: center;
+            z-index: 0;
+            margin: 0 !important;
+        }
+
+        .carousel-slide.active {
+            opacity: 1;
+            z-index: 1;
+        }
+
+        /* 3. Imágenes sueltas (sin carrusel) */
+        .step img {
+            width: 100%;
+            height: 300px; /* MISMA ALTURA QUE EL CARRUSEL */
+            object-fit: cover; /* Recorta para llenar */
+            object-position: center;
+            display: block;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background-color: #1a252f;
+        }
+
+        /* Pie de foto */
+        .caption-box {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0));
+            color: #fff;
+            font-size: 11px;
+            padding: 20px 10px 5px 10px;
+            box-sizing: border-box;
+            font-family: sans-serif;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 1s;
+            text-align: right;
+        }
+
+        .caption-box.active {
+            opacity: 1;
+        }
+
+        @media (max-width: 750px) {
+            .centered, .lefty, .righty, .fully {
+                width: 90vw;
+                margin: 0 auto;
+            }
+            /* En móvil quizás quieras que sea un poco más pequeño */
+            .carousel-container, .step img {
+                height: 200px; 
+            }
+        }
+
+        .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan,
+        .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan .mapboxgl-canvas {
+            touch-action: unset;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="map"></div>
+    <div id="story"></div>
+
+    <script src="./config.js"></script>
+    <script>
+        var initLoad = true;
+        var layerTypes = {
+            'fill': ['fill-opacity'],
+            'line': ['line-opacity'],
+            'circle': ['circle-opacity', 'circle-stroke-opacity'],
+            'symbol': ['icon-opacity', 'text-opacity'],
+            'raster': ['raster-opacity'],
+            'fill-extrusion': ['fill-extrusion-opacity'],
+            'heatmap': ['heatmap-opacity']
+        }
+
+        var alignments = {
+            'left': 'lefty',
+            'center': 'centered',
+            'right': 'righty',
+            'full': 'fully'
+        }
+
+        function getLayerPaintType(layer) {
+            var layerType = map.getLayer(layer).type;
+            return layerTypes[layerType];
+        }
+
+        function setLayerOpacity(layer) {
+            var paintProps = getLayerPaintType(layer.layer);
+            paintProps.forEach(function (prop) {
+                var options = {};
+                if (layer.duration) {
+                    var transitionProp = prop + "-transition";
+                    options = { "duration": layer.duration };
+                    map.setPaintProperty(layer.layer, transitionProp, options);
+                }
+                map.setPaintProperty(layer.layer, prop, layer.opacity, options);
+            });
+        }
+
+        var story = document.getElementById('story');
+        var features = document.createElement('div');
+        features.setAttribute('id', 'features');
+
+        var header = document.createElement('div');
+
+        if (config.title) {
+            var titleText = document.createElement('h1');
+            titleText.innerText = config.title;
+            header.appendChild(titleText);
+        }
+
+        if (config.subtitle) {
+            var subtitleText = document.createElement('h2');
+            subtitleText.innerText = config.subtitle;
+            header.appendChild(subtitleText);
+        }
+
+        if (config.byline) {
+            var bylineText = document.createElement('p');
+            bylineText.innerText = config.byline;
+            header.appendChild(bylineText);
+        }
+
+        if (header.innerText.length > 0) {
+            header.classList.add(config.theme);
+            header.setAttribute('id', 'header');
+            story.appendChild(header);
+        }
+
+        // --- GENERACIÓN DEL CONTENIDO ---
+        config.chapters.forEach((record, idx) => {
+            var container = document.createElement('div');
+            var chapter = document.createElement('div');
+
+            if (record.title) {
+                var title = document.createElement('h3');
+                title.innerText = record.title;
+                chapter.appendChild(title);
+            }
+
+            // Lógica Carrusel vs Imagen Única
+            if (record.gallery && record.gallery.length > 0) {
+                var carContainer = document.createElement('div');
+                carContainer.className = 'carousel-container';
+                carContainer.id = 'carousel-' + record.id;
+                
+                record.gallery.forEach((item, i) => {
+                    var img = new Image();
+                    img.src = item.src;
+                    img.className = 'carousel-slide' + (i === 0 ? ' active' : '');
+                    
+                    var cap = document.createElement('div');
+                    cap.innerText = item.caption;
+                    cap.className = 'caption-box' + (i === 0 ? ' active' : '');
+
+                    carContainer.appendChild(img);
+                    carContainer.appendChild(cap);
+                });
+                chapter.appendChild(carContainer);
+
+            } else if (record.image) {
+                var image = new Image();
+                image.src = record.image;
+                chapter.appendChild(image);
+            }
+
+            if (record.description) {
+                var storyText = document.createElement('p');
+                storyText.innerHTML = record.description;
+                chapter.appendChild(storyText);
+            }
+
+            container.setAttribute('id', record.id);
+            container.classList.add('step');
+            if (idx === 0) {
+                container.classList.add('active');
+            }
+
+            chapter.classList.add(config.theme);
+            container.appendChild(chapter);
+            container.classList.add(alignments[record.alignment] || 'centered');
+            if (record.hidden) {
+                container.classList.add('hidden');
+            }
+            features.appendChild(container);
+        });
+
+        story.appendChild(features);
+
+        var footer = document.createElement('div');
+
+        if (config.footer) {
+            var footerText = document.createElement('p');
+            footerText.innerHTML = config.footer;
+            footer.appendChild(footerText);
+        }
+
+        if (footer.innerText.length > 0) {
+            footer.classList.add(config.theme);
+            footer.setAttribute('id', 'footer');
+            story.appendChild(footer);
+        }
+
+        mapboxgl.accessToken = config.accessToken;
+
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: config.style,
+            center: config.chapters[0].location.center,
+            zoom: config.chapters[0].location.zoom,
+            bearing: config.chapters[0].location.bearing,
+            pitch: config.chapters[0].location.pitch,
+            interactive: false,
+            projection: config.projection
+        });
+
+        if (config.inset) {
+            map.addControl(
+                new GlobeMinimap({ ...config.insetOptions }),
+                config.insetPosition
+            );
+        }
+
+        if (config.showMarkers) {
+            var marker = new mapboxgl.Marker({ color: config.markerColor });
+            marker.setLngLat(config.chapters[0].location.center).addTo(map);
+        }
+
+        var scroller = scrollama();
+        var carouselInterval; 
+
+        map.on("load", function () {
+            if (config.use3dTerrain) {
+                map.addSource('mapbox-dem', {
+                    'type': 'raster-dem',
+                    'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                    'tileSize': 512,
+                    'maxzoom': 14
+                });
+                map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+                map.addLayer({
+                    'id': 'sky',
+                    'type': 'sky',
+                    'paint': {
+                        'sky-type': 'atmosphere',
+                        'sky-atmosphere-sun': [0.0, 0.0],
+                        'sky-atmosphere-sun-intensity': 15
+                    }
+                });
+            };
+
+            scroller
+                .setup({
+                    step: '.step',
+                    offset: 0.5,
+                    progress: true
+                })
+                .onStepEnter(async response => {
+                    var current_chapter = config.chapters.findIndex(chap => chap.id === response.element.id);
+                    var chapter = config.chapters[current_chapter];
+
+                    response.element.classList.add('active');
+                    map[chapter.mapAnimation || 'flyTo'](chapter.location);
+
+                    if (config.showMarkers) {
+                        marker.setLngLat(chapter.location.center);
+                    }
+                    if (chapter.onChapterEnter.length > 0) {
+                        chapter.onChapterEnter.forEach(setLayerOpacity);
+                    }
+                    if (chapter.callback) {
+                        window[chapter.callback]();
+                    }
+                    if (chapter.rotateAnimation) {
+                        map.once('moveend', () => {
+                            const rotateNumber = map.getBearing();
+                            map.rotateTo(rotateNumber + 180, {
+                                duration: 30000, easing: function (t) {
+                                    return t;
+                                }
+                            });
+                        });
+                    }
+                    
+                    // --- CONTROL DEL CARRUSEL ---
+                    if (carouselInterval) clearInterval(carouselInterval);
+
+                    if (chapter.gallery && chapter.gallery.length > 1) {
+                        var containerId = 'carousel-' + chapter.id;
+                        var slides = document.querySelectorAll(`#${containerId} .carousel-slide`);
+                        var captions = document.querySelectorAll(`#${containerId} .caption-box`);
+                        
+                        if(slides.length > 0) {
+                            var currentIndex = 0;
+                            slides.forEach(s => s.classList.remove('active'));
+                            captions.forEach(c => c.classList.remove('active'));
+                            slides[0].classList.add('active');
+                            captions[0].classList.add('active');
+
+                            carouselInterval = setInterval(() => {
+                                slides[currentIndex].classList.remove('active');
+                                captions[currentIndex].classList.remove('active');
+                                
+                                currentIndex = (currentIndex + 1) % slides.length;
+                                
+                                slides[currentIndex].classList.add('active');
+                                captions[currentIndex].classList.add('active');
+                            }, 4000); 
+                        }
+                    }
+                })
+                .onStepExit(response => {
+                    var chapter = config.chapters.find(chap => chap.id === response.element.id);
+                    response.element.classList.remove('active');
+                    if (chapter.onChapterExit.length > 0) {
+                        chapter.onChapterExit.forEach(setLayerOpacity);
+                    }
+                    if (carouselInterval) clearInterval(carouselInterval);
+                });
+        });    
+    </script>
+
+</body>
+</html>
